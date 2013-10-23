@@ -1,0 +1,87 @@
+%{
+#include <stdio.h>
+#include <stdint.h>
+
+#include <time.h>
+#include <stdlib.h>
+
+#define DEBUGBISON
+#ifdef DEBUGBISON
+	#include <stdarg.h>
+#endif
+
+void debugBison(const char* s, ...){
+	#ifdef DEBUGBISON
+	va_list arglist;
+	va_start( arglist, s );
+	vprintf( s, arglist );
+	va_end( arglist );
+	#endif
+}
+
+int yylex(void);
+void yyerror(const char *);
+
+%}
+
+%union {
+	int ival;
+	float fval;
+	char *sval;
+}
+
+%token <ival> NUMBER 
+%token <fval> FLOAT
+
+%token <sval> NEWLINE
+%token <sval> ERR
+
+%token <ival> INSTRUCTION_N
+%token <ival> INSTRUCTION_S
+%token <ival> INSTRUCTION_D
+%token <ival> ALIAS
+%token <ival> ADDRESS
+%token <ival> NAME
+
+%type <fval> anyNumber
+%type <sval> start
+
+%%
+
+start:	  aliasDefs program		{debugBison("Program end reached.\n");}
+	| program
+	;
+
+aliasDefs: 	  aliasDef
+		| aliasDefs aliasDef
+		;
+
+aliasDef: ALIAS NAME ADDRESS NEWLINE {debugBison("An alias is defined\n");};
+
+locator:  ADDRESS {}
+	| NAME
+	;
+
+anyInstruction:	  INSTRUCTION_N NEWLINE			{debugBison("Zero arg instruction.\n");}
+		| INSTRUCTION_S locator NEWLINE		{debugBison("One arg instruction.\n");}
+		| INSTRUCTION_D locator locator NEWLINE	{debugBison("Two arg instruction.\n");}
+		;
+
+program: anyInstruction
+	| program anyInstruction
+	;
+
+
+anyNumber: 	  NUMBER	{$$ = $1;}//shut up!
+		| FLOAT	
+		;
+
+%%
+
+int main(int argc, char ** argv){
+	return yyparse();
+}
+
+void yyerror(const char* s){
+	fprintf(stderr, "Error: %s\n", s);
+}

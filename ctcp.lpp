@@ -1,0 +1,53 @@
+%{
+	#include <string>
+	#include "ctcp.tab.hpp"
+	#define DEBUGFLEX
+	#ifdef DEBUGFLEX
+		#include <stdarg.h>
+	#endif
+	
+	void debug(const char* s, ...){
+		#ifdef DEBUGFLEX
+		va_list arglist;
+		va_start( arglist, s );
+		vprintf( s, arglist );
+		va_end( arglist );
+		#endif
+	}
+%}
+
+%%
+
+
+"alias"	{debug("\tflex: found alias (ALIAS)\n"); return ALIAS;}
+
+"NOP"	{debug("\tflex: found NOP (INSTRUCTION_N)\n"); yylval.ival = 1; return INSTRUCTION_N;}
+"RST"	{debug("\tflex: found RST (INSTRUCTION_N)\n"); yylval.ival = 2; return INSTRUCTION_N;}
+"MOV"	{debug("\tflex: found MOV (INSTRUCTION_D)\n"); yylval.ival = 3; return INSTRUCTION_D;}
+
+"ADD"	{debug("\tflex: found ADD (INSTRUCTION_D)\n"); yylval.ival = 4; return INSTRUCTION_D;}
+"SUB"	{debug("\tflex: found SUB (INSTRUCTION_D)\n"); yylval.ival = 5; return INSTRUCTION_D;}
+"DIV"	{debug("\tflex: found DIV (INSTRUCTION_D)\n"); yylval.ival = 6; return INSTRUCTION_D;}
+"MUL"	{debug("\tflex: found MUL (INSTRUCTION_D)\n"); yylval.ival = 7; return INSTRUCTION_D;}
+"GET"	{debug("\tflex: found GET (INSTRUCTION_D)\n"); yylval.ival = 8; return INSTRUCTION_D;}
+
+"JMP"	{debug("\tflex: found JMP (INSTRUCTION_S)\n"); yylval.ival = 9; return INSTRUCTION_S;}
+
+"DEC"	{debug("\tflex: found DEC (INSTRUCTION_S)\n"); yylval.ival = 10; return INSTRUCTION_S;}
+"INC"	{debug("\tflex: found INC (INSTRUCTION_S)\n"); yylval.ival = 11; return INSTRUCTION_S;}
+"TIME"	{debug("\tflex: found TIME (INSTRUCTION_S)\n"); yylval.ival = 12; return INSTRUCTION_S;}
+"TPID"	{debug("\tflex: found TPID (INSTRUCTION_S)\n"); yylval.ival = 13; return INSTRUCTION_S;}
+"TOTP"	{debug("\tflex: found TOTP (INSTRUCTION_S)\n"); yylval.ival = 14; return INSTRUCTION_S;}
+"STAT"	{debug("\tflex: found STAT (INSTRUCTION_S)\n"); yylval.ival = 15; return INSTRUCTION_S;}
+"BLAL"	{debug("\tflex: found BLAL (INSTRUCTION_S)\n"); yylval.ival = 16; return INSTRUCTION_S;}
+
+[ASL]\.[-+]?[0-9]+	{debug("\tflex: found address\n"); std::string yytext2(yytext, 2, -1); yylval.ival = atoi(yytext2.data()); return ADDRESS;}//LOL return address! :-)
+
+[a-zA-Z]([a-zA-Z0-9]*)	{debug("\tflex: found name\n"); return NAME;}
+
+[-+]?[0-9]+	{debug("\tflex: found NUMBER\n");yylval.ival = atoi(yytext); return NUMBER;}
+[-+]?([0-9]*\.?[0-9]+|[0]9+\.)	{debug("\tflex: found FLOAT\n"); float myFloat = atof(yytext); yylval.fval = myFloat; return FLOAT;}
+[\n]	{debug("\tflex: found NEWLINE\n");return NEWLINE;}
+[ \t]	{debug("\tflex: eating white space\n");/*eat white space*/}
+";".*	{/*eat up all the comments*/}
+.	{return ERR;}
